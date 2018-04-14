@@ -7,9 +7,9 @@ function populateTable() {
     $("#table_items").html('');
     for (let index = 0; index < orderedNames.length; index++) {
         let element = orderedNames[index];
-        $("#table_items").append(`<tr><th class="my-handle">:::<th class="order">${element.order}</th><td>${element.firstName}</td><td>${element.lastName}</td><td class="id">${element.id}</td></tr>`);
+        $("#table_items").append(`<tr><td class="my-handle">:::</td><th><input class="order form-control form-control-sm" type="text" value="${element.order}"></th><td>${element.firstName}</td><td>${element.lastName}</td><td class="id">${element.id}</td></tr>`);
         // use this to make order text editable
-        // $(".order").attr('contentEditable',true);
+        $(".order").attr('contentEditable',true);
     }
 }
 
@@ -17,15 +17,15 @@ function populateTable() {
 var el = document.getElementById('table_items');
 var sortable = Sortable.create(el, {
     // use this so that only the handle is dragable
-    // handle: ".my-handle"
+    handle: ".my-handle"
 });
 
 // update order value to reflect visual order on the page
 // after drag-and-drop
-function updateOrder() {
-    let currentOrder = []
+function dragUpdateOrder() {
+    let currentOrder = [];
     $("#table_items tr .id").each(function() {
-        currentOrder.push(parseInt($(this).text()))
+        currentOrder.push(parseInt($(this).text()));
     });
 
 
@@ -39,9 +39,34 @@ function updateOrder() {
     populateTable();
 };
 
-// TODO:
-// Read new order entered by user text input
-// then use that to re-populate table
+function textUpdateOrder() {
+    // TODO:
+    // add a way to tell which element was just changed
+    // to know to push it ahead of the old element with
+    // the same order
+    let orderObjects = [];
+    $("#table_items tr").each(function() {
+        let order = ($(this).find(".order")[0].value);
+        let id = parseInt($(this).find(".id").text());
+        let newObject = { "order": order, "id": id };
+        orderObjects.push(newObject);
+    });
+    bubbleSortByOrder(orderObjects);
+
+    let orderInt = []
+    orderObjects.forEach(element => {
+        orderInt.push(element.id);   
+    });
+
+    for (let index = 0; index < orderedNames.length; index++) {
+        let element = orderedNames[index];
+        let newOrder = (orderInt.indexOf(element.id) + 1);
+        element.order = newOrder;
+    }
+
+    bubbleSortByOrder(orderedNames);
+    populateTable();
+}
 
 
 // bubble sort by order property
@@ -73,18 +98,19 @@ function bubbleSortByOrder(array) {
 // slows down the call of my update function to give document
 // a quick moment to catch up
 function slowUpdate(){
-    setTimeout(function() { updateOrder() }, 200);
+    setTimeout(function() { dragUpdateOrder() }, 100);
 };
 
 function keyPressed(k) {
     if (k.code == 'Enter')
-        slowUpdate();
+        textUpdateOrder();
     return false;
 }
 
 bubbleSortByOrder(orderedNames);
 populateTable();
 
-// calls update when item is dropped 
+// calls update when item is dropped or touch ends
 document.addEventListener("drop", slowUpdate);
-document.addEventListener("keypress", keyPressed)
+document.addEventListener("touchend", textUpdateOrder);
+document.addEventListener("keypress", keyPressed);
